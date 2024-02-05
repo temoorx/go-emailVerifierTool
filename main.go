@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -31,6 +32,17 @@ func checkDomain(domain string) {
 	if len(maxRecords) > 0 {
 		hasMx = true
 
+	}
+	txtRecords, err := net.LookupTXT(domain)
+	if err != nil {
+		log.Printf("Error:%v\n", err)
+	}
+	for _, record := range txtRecords {
+		if strings.HasPrefix(record, "v=spf1") {
+			hasSPF = true
+			spfRecord = record
+			break
+		}
 	}
 
 }
