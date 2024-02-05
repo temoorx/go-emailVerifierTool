@@ -11,51 +11,58 @@ import (
 
 func main() {
 	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Println("domain, haxMx, hasSPF, sprRecord, hasDMARC, demarcRecord \n")
+	fmt.Println("domain, hasMX, hasSPF, SPFRecord, hasDMARC, DMARCRecord")
+
 	for scanner.Scan() {
 		checkDomain(scanner.Text())
 	}
+
 	if err := scanner.Err(); err != nil {
-		log.Fatal("Error: Could not read from input: %v\n", err)
+		log.Fatalf("Error: Could not read from input: %v\n", err)
 	}
 }
 
 func checkDomain(domain string) {
-	var hasMx, hasSPF, hasDMARC bool
-	var spfRecord, demarcRecord string
+	var hasMX, hasSPF, hasDMARC bool
+	var SPFRecord, DMARCRecord string
 
-	maxRecords, err := net.LookupMX(domain)
+	mxRecords, err := net.LookupMX(domain)
 	if err != nil {
-		log.Printf("Error :%v\n", err)
+		log.Printf("Error: %v\n", err)
+		return
 	}
 
-	if len(maxRecords) > 0 {
-		hasMx = true
-
+	if len(mxRecords) > 0 {
+		hasMX = true
 	}
+
 	txtRecords, err := net.LookupTXT(domain)
 	if err != nil {
-		log.Printf("Error:%v\n", err)
+		log.Printf("Error: %v\n", err)
+		return
 	}
+
 	for _, record := range txtRecords {
 		if strings.HasPrefix(record, "v=spf1") {
 			hasSPF = true
-			spfRecord = record
+			SPFRecord = record
 			break
 		}
 	}
-	demarcRecords, err := net.LookupTXT("_dmarc." + domain)
+
+	dmarcRecords, err := net.LookupTXT("_dmarc." + domain)
 	if err != nil {
-		log.Printf("Error%v\n", err)
+		log.Printf("Error: %v\n", err)
+		return
 	}
-	for _, record := range demarcRecords {
+
+	for _, record := range dmarcRecords {
 		if strings.HasPrefix(record, "v=DMARC1") {
 			hasDMARC = true
-			demarcRecord = record
+			DMARCRecord = record
 			break
 		}
 	}
 
-	fmt.Printf("%v, %v, %v, %v, %v, %v ", domain, hasMx, hasSPF, spfRecord, hasDMARC, demarcRecord)
-
+	fmt.Printf("%v, %v, %v, %v, %v, %v\n", domain, hasMX, hasSPF, SPFRecord, hasDMARC, DMARCRecord)
 }
